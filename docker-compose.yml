@@ -4,15 +4,15 @@ services:
     image: postgres:16-alpine
     container_name: hotnspicy_db
     environment:
-      POSTGRES_USER: stanley
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: hotnspicy
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U stanley -d hotnspicy"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,10 +22,10 @@ services:
     build: .
     container_name: hotnspicy_app
     environment:
-      DATABASE_URL: postgresql+psycopg2://stanley:secret@db:5432/hotnspicy
-      SECRET_KEY: C4eU5f7XKrl6mOhJYDK3-TsKB96OSqZnQ8cbLhf7GEg
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
     ports:
       - "8000:8000"
     depends_on:
