@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.services.auth import hash_password, verify_password, create_access_token
-from app.schemas.user import UserCreate, UserOut, UserLogin
-from app.schemas.token import Token
+from services.auth import hash_password, verify_password, create_access_token
+from schemas.user import UserCreate, UserOut, UserLogin
+from schemas.token import Token
 
-from app.database.database import get_db
+from database.database import get_db
 
-from app.database.models.user import User
+from database.models.user import User
 
 
 

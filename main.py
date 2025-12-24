@@ -1,0 +1,15 @@
+from fastapi import FastAPI
+
+from api.auth import router as auth_router
+from database import Base, engine
+# Import models so SQLAlchemy knows about them before creating tables
+from database.models import User, Post
+
+app = FastAPI()
+app.include_router(auth_router)
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+
+

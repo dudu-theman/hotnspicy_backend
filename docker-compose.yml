@@ -1,0 +1,37 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: hotnspicy_db
+    environment:
+      POSTGRES_USER: stanley
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: hotnspicy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stanley -d hotnspicy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Application
+  app:
+    build: .
+    container_name: hotnspicy_app
+    environment:
+      DATABASE_URL: postgresql+psycopg2://stanley:secret@db:5432/hotnspicy
+      SECRET_KEY: C4eU5f7XKrl6mOhJYDK3-TsKB96OSqZnQ8cbLhf7GEg
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
