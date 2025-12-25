@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from schemas.token import Token
 
 class UserCreate(BaseModel):
     username: str
@@ -15,3 +16,7 @@ class UserOut(BaseModel):
 class UserLogin(BaseModel):
     identifier: str
     password: str
+
+class UserWithToken(BaseModel):
+    user: UserOut
+    token: Token
