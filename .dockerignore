@@ -13,3 +13,6 @@ env/
 
 # IDE
 .vscode/
+
+# Documentation
+api/documentation.txt
