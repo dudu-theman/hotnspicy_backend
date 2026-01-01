@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List
 
 from services.auth import get_current_user_id
-from schemas.post import PostCreate, PostOut
+from services.post import get_post_or_404, verify_post_ownership, post_to_schema
+from schemas.post import PostCreate, PostUpdate, PostOut
 from database.database import get_db
 from database.models.post import Post
 
@@ -16,33 +18,82 @@ def create_post(
     db: Session = Depends(get_db)
 ):
     """
-    Create a new post or reply.
+    Create a new post.
     Requires authentication via Bearer token.
-    If parent_id is provided, creates a reply to that post.
     """
-    # If parent_id is provided, verify the parent post exists
-    if post.parent_id is not None:
-        parent_post = db.query(Post).filter(Post.id == post.parent_id).first()
-        if not parent_post:
-            raise HTTPException(status_code=404, detail="Parent post not found")
-
     new_post = Post(
         title=post.title,
         content=post.content,
-        owner_id=user_id,
-        parent_id=post.parent_id
+        owner_id=user_id
     )
 
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
 
-    response = PostOut(
-        id=new_post.id,
-        title=new_post.title,
-        content=new_post.content,
-        owner_id=new_post.owner_id,
-        parent_id=new_post.parent_id
-    )
+    return post_to_schema(new_post)
 
-    return response
+@router.get("/", response_model=List[PostOut])
+def get_posts(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all posts with pagination.
+    No authentication required.
+    """
+    posts = db.query(Post).offset(skip).limit(limit).all()
+    return [post_to_schema(post) for post in posts]
+
+@router.get("/{post_id}", response_model=PostOut)
+def get_post(post_id: int, db: Session = Depends(get_db)):
+    """
+    Get a single post by ID.
+    No authentication required.
+    """
+    post = get_post_or_404(db, post_id)
+    return post_to_schema(post)
+
+@router.put("/{post_id}", response_model=PostOut)
+def update_post(
+    post_id: int,
+    post_update: PostUpdate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Update a post (title and/or content).
+    Requires authentication. Only the post owner can update.
+    """
+    post = get_post_or_404(db, post_id)
+    verify_post_ownership(post, user_id)
+
+    # Update fields if provided
+    if post_update.title is not None:
+        post.title = post_update.title
+    if post_update.content is not None:
+        post.content = post_update.content
+
+    db.commit()
+    db.refresh(post)
+
+    return post_to_schema(post)
+
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(
+    post_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a post.
+    Requires authentication. Only the post owner can delete.
+    """
+    post = get_post_or_404(db, post_id)
+    verify_post_ownership(post, user_id)
+
+    db.delete(post)
+    db.commit()
+
+    return None

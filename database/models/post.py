@@ -8,16 +8,14 @@ class Post(Base):
     title = Column(String)
     content = Column(String)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    parent_id = Column(Integer, ForeignKey("posts.id"), nullable=True)
+
+    # Relationship: post -> comments (one-to-many)
+    comments = relationship("Comment", back_populates="post")
 
     # Relationship: post -> owner (many-to-one)
     owner = relationship("User", back_populates="posts")
 
-    # Relationship: reply -> parent (many-to-one)
-    parent = relationship("Post", remote_side=[id], back_populates="replies")
 
-    # Relationship: parent -> replies (one-to-many)
-    replies = relationship("Post", back_populates="parent")
 
 
 

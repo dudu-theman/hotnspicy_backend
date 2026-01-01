@@ -12,3 +12,6 @@ class User(Base):
     # Relationship: user -> posts (one-to-many)
     posts = relationship("Post", back_populates="owner")
 
+    # Relationship: user -> comments (one-to-many)
+    comments = relationship("Comment", back_populates="owner")
+

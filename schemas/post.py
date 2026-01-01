@@ -4,13 +4,15 @@ from typing import Optional
 class PostCreate(BaseModel):
     title: str
     content: str
-    parent_id: Optional[int] = None
+
+class PostUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
 
 class PostOut(BaseModel):
     id: int
     title: str
     content: str
     owner_id: int
-    parent_id: Optional[int] = None
     class Config:
         from_attributes = True

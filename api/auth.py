@@ -16,15 +16,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserWithToken)
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if username already exists
-    existing_username = db.query(User).filter(User.username == user.username).first()
-    if existing_username:
-        raise HTTPException(status_code=400, detail="Username already exists")
+    # Check if username or email already exists (single query)
+    existing_user = db.query(User).filter(
+        or_(User.username == user.username, User.email == user.email)
+    ).first()
 
-    # Check if email already exists
-    existing_email = db.query(User).filter(User.email == user.email).first()
-    if existing_email:
-        raise HTTPException(status_code=400, detail="Email already exists")
+    if existing_user:
+        # Determine which field conflicts
+        if existing_user.username == user.username:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        else:
+            raise HTTPException(status_code=400, detail="Email already exists")
 
     hashed_password = hash_password(user.password)
     new_user = User(username=user.username, email=user.email, hashed_password=hashed_password)
