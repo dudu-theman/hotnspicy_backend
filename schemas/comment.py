@@ -6,6 +6,9 @@ class CommentCreate(BaseModel):
     post_id: int
     parent_id: Optional[int] = None
 
+class CommentUpdate(BaseModel):
+    content: Optional[str] = None
+
 class CommentOut(BaseModel):
     id: int
     content: str

@@ -46,6 +46,20 @@ def get_posts(
     posts = db.query(Post).offset(skip).limit(limit).all()
     return [post_to_schema(post) for post in posts]
 
+@router.get("/user/{user_id}", response_model=List[PostOut])
+def get_posts_by_user(
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all posts by a specific user with pagination.
+    No authentication required.
+    """
+    posts = db.query(Post).filter(Post.owner_id == user_id).offset(skip).limit(limit).all()
+    return [post_to_schema(post) for post in posts]
+
 @router.get("/{post_id}", response_model=PostOut)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     """
