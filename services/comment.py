@@ -30,13 +30,7 @@ def comment_to_schema(comment: Comment) -> CommentOut:
     """
     Convert a Comment model to CommentOut schema.
     """
-    return CommentOut(
-        id=comment.id,
-        content=comment.content,
-        owner_id=comment.owner_id,
-        post_id=comment.post_id,
-        parent_id=comment.parent_id
-    )
+    return CommentOut.model_validate(comment)
 
 
 def verify_post_exists(db: Session, post_id: int) -> None:

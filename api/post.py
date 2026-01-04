@@ -5,8 +5,11 @@ from typing import List
 from services.auth import get_current_user_id
 from services.post import get_post_or_404, verify_post_ownership, post_to_schema
 from schemas.post import PostCreate, PostUpdate, PostOut
+from schemas.comment import CommentCreate, CommentOut
 from database.database import get_db
 from database.models.post import Post
+from database.models.comment import Comment
+from services.comment import comment_to_schema
 
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -69,7 +72,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     post = get_post_or_404(db, post_id)
     return post_to_schema(post)
 
-@router.put("/{post_id}", response_model=PostOut)
+@router.patch("/{post_id}", response_model=PostOut)
 def update_post(
     post_id: int,
     post_update: PostUpdate,
@@ -77,7 +80,7 @@ def update_post(
     db: Session = Depends(get_db)
 ):
     """
-    Update a post (title and/or content).
+    Partially update a post (title and/or content).
     Requires authentication. Only the post owner can update.
     """
     post = get_post_or_404(db, post_id)
@@ -93,6 +96,33 @@ def update_post(
     db.refresh(post)
 
     return post_to_schema(post)
+
+@router.post("/{post_id}/comments", response_model=CommentOut)
+def create_comment(
+    post_id: int,
+    comment: CommentCreate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a top-level comment on a post.
+    Requires authentication via Bearer token.
+    """
+    # Verify the post exists
+    post = get_post_or_404(db, post_id)
+
+    new_comment = Comment(
+        content=comment.content,
+        post_id=post_id,
+        parent_id=None,
+        owner_id=user_id
+    )
+
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+
+    return comment_to_schema(new_comment)
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(

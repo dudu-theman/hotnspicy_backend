@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from datetime import datetime
 
 class PostCreate(BaseModel):
     title: str
@@ -10,9 +11,12 @@ class PostUpdate(BaseModel):
     content: Optional[str] = None
 
 class PostOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     content: str
     owner_id: int
-    class Config:
-        from_attributes = True
+    created_at: datetime
+    updated_at: datetime
+    comment_count: int = 0

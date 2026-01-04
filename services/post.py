@@ -28,10 +28,8 @@ def verify_post_ownership(post: Post, user_id: int) -> None:
 def post_to_schema(post: Post) -> PostOut:
     """
     Convert a Post model to PostOut schema.
+    Calculates comment_count from the comments relationship.
     """
-    return PostOut(
-        id=post.id,
-        title=post.title,
-        content=post.content,
-        owner_id=post.owner_id
-    )
+    post_out = PostOut.model_validate(post)
+    post_out.comment_count = len(post.comments)
+    return post_out

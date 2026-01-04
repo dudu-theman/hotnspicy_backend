@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from schemas.token import Token
+from datetime import datetime
 
 class UserCreate(BaseModel):
     username: str
@@ -7,11 +8,12 @@ class UserCreate(BaseModel):
     password: str
 
 class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str
-    class Config:
-        from_attributes = True
+    created_at: datetime
 
 class UserLogin(BaseModel):
     identifier: str

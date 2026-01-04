@@ -37,7 +37,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
     access_token = create_access_token(data={"sub": str(new_user.id)})
 
-    user_out = UserOut(id=new_user.id, username=new_user.username, email=new_user.email)
+    user_out = UserOut.model_validate(new_user)
     token = Token(access_token=access_token, token_type="bearer")
     response = UserWithToken(user=user_out, token=token)
 

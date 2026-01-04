@@ -6,47 +6,41 @@ from services.auth import get_current_user_id
 from services.comment import (
     get_comment_or_404,
     verify_comment_ownership,
-    comment_to_schema,
-    verify_post_exists,
-    verify_parent_comment_exists
+    comment_to_schema
 )
-from schemas.comment import CommentCreate, CommentUpdate, CommentOut
+from schemas.comment import ReplyCreate, CommentUpdate, CommentOut
 from database.database import get_db
 from database.models.comment import Comment
 
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
-@router.post("/", response_model=CommentOut)
-def create_comment(
-    comment: CommentCreate,
+@router.post("/{comment_id}/replies", response_model=CommentOut)
+def create_reply(
+    comment_id: int,
+    reply: ReplyCreate,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """
-    Create a new comment or reply.
+    Create a reply to a comment.
     Requires authentication via Bearer token.
-    If parent_id is provided, creates a reply to that comment.
     """
-    # Verify the post exists
-    verify_post_exists(db, comment.post_id)
+    # Verify the parent comment exists
+    parent_comment = get_comment_or_404(db, comment_id)
 
-    # If parent_id is provided, verify the parent comment exists
-    if comment.parent_id is not None:
-        verify_parent_comment_exists(db, comment.parent_id)
-
-    new_comment = Comment(
-        content=comment.content,
-        post_id=comment.post_id,
-        parent_id=comment.parent_id,
+    new_reply = Comment(
+        content=reply.content,
+        post_id=parent_comment.post_id,
+        parent_id=comment_id,
         owner_id=user_id
     )
 
-    db.add(new_comment)
+    db.add(new_reply)
     db.commit()
-    db.refresh(new_comment)
+    db.refresh(new_reply)
 
-    return comment_to_schema(new_comment)
+    return comment_to_schema(new_reply)
 
 @router.get("/", response_model=List[CommentOut])
 def get_comments(
@@ -84,7 +78,25 @@ def get_comment(comment_id: int, db: Session = Depends(get_db)):
     comment = get_comment_or_404(db, comment_id)
     return comment_to_schema(comment)
 
-@router.put("/{comment_id}", response_model=CommentOut)
+@router.get("/{comment_id}/replies", response_model=CommentOut)
+def get_comment_with_replies(comment_id: int, db: Session = Depends(get_db)):
+    """
+    Get a comment with a shallow tree of replies (exactly 1 layer deep).
+    No authentication required.
+    """
+    # Get the parent comment
+    comment = get_comment_or_404(db, comment_id)
+
+    # Get direct replies to this comment
+    replies = db.query(Comment).filter(Comment.parent_id == comment_id).all()
+
+    # Build the comment schema with replies
+    comment_out = comment_to_schema(comment)
+    comment_out.replies = [comment_to_schema(reply) for reply in replies]
+
+    return comment_out
+
+@router.patch("/{comment_id}", response_model=CommentOut)
 def update_comment(
     comment_id: int,
     comment_update: CommentUpdate,

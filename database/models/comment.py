@@ -1,6 +1,7 @@
 from database.database import Base
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -9,6 +10,7 @@ class Comment(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     post_id = Column(Integer, ForeignKey("posts.id"))
     parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship: comment -> owner (many-to-one)
     owner = relationship("User", back_populates ="comments")
